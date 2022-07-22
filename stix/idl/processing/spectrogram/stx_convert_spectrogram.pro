@@ -61,7 +61,7 @@
 ;-
 pro  stx_convert_spectrogram, fits_path_data = fits_path_data, fits_path_bk = fits_path_bk, time_shift = time_shift, energy_shift = energy_shift, distance = distance, $
   flare_location= flare_location, elut_filename = elut_filename, replace_doubles = replace_doubles, keep_short_bins = keep_short_bins, apply_time_shift = apply_time_shift,$
-  no_attenuation = no_attenuation, plot = plot, ospex_obj = ospex_obj
+  no_attenuation = no_attenuation, xspec = xspec, plot = plot, ospex_obj = ospex_obj, time_bin_filename = time_bin_filename
 
   if n_elements(time_shift) eq 0 then begin
     message, 'Time shift value is not set. Using default value of 0 [s].', /info
@@ -71,12 +71,13 @@ pro  stx_convert_spectrogram, fits_path_data = fits_path_data, fits_path_bk = fi
   endif
   
   default, flare_location, [0.,0.]
+  default, xspec, 0 
   default, plot, 1 
 
 
   stx_read_spectrogram_fits_file, fits_path_data, time_shift, primary_header = primary_header, data_str = data_str, data_header = data_header, control_str = control_str, $
     control_header= control_header, energy_str = energy_str, energy_header = energy_header, t_axis = t_axis, energy_shift = energy_shift,  e_axis = e_axis , use_discriminators = 0,$
-    replace_doubles = replace_doubles, keep_short_bins = keep_short_bins, shift_duration = shift_duration
+    replace_doubles = replace_doubles, keep_short_bins = keep_short_bins, shift_duration = shift_duration, time_bin_filename  = time_bin_filename
 
 
   data_level = 4
@@ -181,7 +182,7 @@ pro  stx_convert_spectrogram, fits_path_data = fits_path_data, fits_path_bk = fi
   specpar = { sp_atten_state :  {time:ut_rcr[index], state:state} }
   
   stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar, time_shift = time_shift, data_level = data_level, data_dims = data_dims, fits_path_bk = fits_path_bk, $
-    distance = distance, flare_location= flare_location, eff_ewidth = eff_ewidth, plot = plot, ospex_obj = ospex_obj
+     distance = distance, flare_location= flare_location, eff_ewidth = eff_ewidth, xspec = xspec, plot = plot, ospex_obj = ospex_obj
 
 end
 
