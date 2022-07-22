@@ -56,7 +56,7 @@
 ;    
 ;-
 pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar, time_shift = time_shift, data_level = data_level, data_dims = data_dims,  fits_path_bk = fits_path_bk,$
-  dist_factor = dist_factor, flare_location= flare_location, eff_ewidth = eff_ewidth, plot = plot, ospex_obj = ospex_obj
+  dist_factor = dist_factor, flare_location= flare_location, eff_ewidth = eff_ewidth, xspec = xspec, plot = plot, ospex_obj = ospex_obj
 
   default, plot, 0
 
@@ -181,7 +181,7 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
   spec_in_corr = spec_in_corr[new_energies,*]
   total_error = total_error[new_energies,*]
   n_energies = n_energy_edges-1
-
+ 
   ;insert the information from the telemetry file into the expected stx_fsw_sd_spectrogram structure
   spectrogram = { $
     type          : "stx_fsw_sd_spectrogram", $
@@ -207,7 +207,7 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
   ph_in = [mean_phe[0]- w_phe[0], mean_phe]
 
   ospex_obj =   stx_fsw_sd_spectrogram2ospex( spectrogram, specpar = specpar, time_shift= time_shift, ph_energy_edges = ph_in, /include_damage, /fits , /tail, livetime_fraction = eff_livetime_fraction, $
-    dist_factor = dist_factor, flare_location= flare_location )
+    dist_factor = dist_factor, flare_location= flare_location, xspec = xspec )
   
   counts_str = ospex_obj->getdata(spex_units='counts')
   origunits = ospex_obj->get(/spex_data_origunits)

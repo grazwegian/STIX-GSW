@@ -66,7 +66,7 @@
 ;
 ;-
 pro  stx_convert_pixel_data, fits_path_data = fits_path_data, fits_path_bk = fits_path_bk, time_shift = time_shift, energy_shift = energy_shift, distance = distance, $
-  flare_location= flare_location,  plot = plot, ospex_obj = ospex_obj, det_ind = det_ind, pix_ind = pix_ind, shift_duration = shift_duration, no_attenuation=no_attenuation
+  flare_location= flare_location, xspec = xspec, plot = plot, ospex_obj = ospex_obj, det_ind = det_ind, pix_ind = pix_ind, shift_duration = shift_duration, no_attenuation=no_attenuation
 
   if n_elements(time_shift) eq 0 then begin
     message, 'Time shift value not set using default value of 0 [s].', /info
@@ -85,6 +85,7 @@ pro  stx_convert_pixel_data, fits_path_data = fits_path_data, fits_path_bk = fit
   default, energy_shift, 0.
   default, flare_location, [0.,0.]
   default, shift_duration, 0
+  default, xspec, 0
   default, plot, 1
 
   dist_factor = 1./(distance^2.)
@@ -257,7 +258,7 @@ pro  stx_convert_pixel_data, fits_path_data = fits_path_data, fits_path_bk = fit
   specpar = { sp_atten_state :  {time:ut_rcr[index], state:state} }
 
   stx_convert_science_data2ospex, spectrogram = spectrogram, specpar=specpar, time_shift = time_shift, data_level = data_level, data_dims = data_dims,  fits_path_bk = fits_path_bk,$
-    dist_factor = dist_factor, flare_location= flare_location, eff_ewidth = eff_ewidth, plot = plot, ospex_obj = ospex_obj
+    dist_factor = dist_factor, flare_location= flare_location, eff_ewidth = eff_ewidth, xspec = xspec, plot = plot, ospex_obj = ospex_obj
 
 end
 
