@@ -195,6 +195,11 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
 
     total_error = corrected_error
 
+    background_data = { $
+      type          : "stx_background_data", $
+      counts        : 0L*corrected_counts, $
+      error         : 0L*corrected_error}
+      
   endelse
 
 
@@ -258,7 +263,7 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
 
   ospex_obj = stx_fsw_sd_spectrogram2ospex( spectrogram, specpar = specpar, time_shift= time_shift, ph_energy_edges = ph_in, $
     /include_damage, generate_fits = generate_fits, xspec = xspec, /tail, livetime_fraction = eff_livetime_fraction, $
-    dist_factor = dist_factor, flare_location= flare_location, sys_uncert = sys_uncert, fits_info_params = fits_info_params )
+    dist_factor = dist_factor, flare_location = flare_location, sys_uncert = sys_uncert, fits_info_params = fits_info_params, background_data = background_data)
 
   if keyword_set(plot) then begin
     ospex_obj ->gui

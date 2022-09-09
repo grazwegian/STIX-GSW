@@ -44,7 +44,7 @@
 ;-
 function stx_fsw_sd_spectrogram2ospex, spectrogram, specpar = specpar, time_shift = time_shift, ph_energy_edges = ph_edges, generate_fits = generate_fits, plotman_obj = pobj, $
   specfilename = specfilename, srmfilename = srmfilename, flare_location = flare_location, gtrans32 = gtrans32, livetime_fraction = livetime_fraction, sys_uncert = sys_uncert, $
-  fits_info_params = fits_info_params, xspec = xspec, _extra = _extra
+  fits_info_params = fits_info_params, xspec = xspec, background_data = background_data, _extra = _extra
 
   default, sys_uncert, 0.05
   ntimes = n_elements(spectrogram.time_axis.time_start)
@@ -87,7 +87,7 @@ function stx_fsw_sd_spectrogram2ospex, spectrogram, specpar = specpar, time_shif
 
   ;make the srm for the appropriate pixel mask and energy edges
   srm = stx_build_pixel_drm(ct_edges, pixel_mask,  ph_energy_edges = ph_edges, grid_factor = grid_factor, dist_factor = dist_factor,$
-     xspec = xspec, _extra = _extra)
+    xspec = xspec, _extra = _extra)
 
   rcr_states = specpar.sp_atten_state.state
   rcr_states = rcr_states[uniq(rcr_states, sort(rcr_states))]
@@ -130,20 +130,20 @@ function stx_fsw_sd_spectrogram2ospex, spectrogram, specpar = specpar, time_shif
     fits_info_params.grid_factor = grid_factor
     fits_info_params.detused = detector_label + ', Pixels: ' + pixel_label
 
-if keyword_set(xspec) then begin
-;xspec in gneral works with energy depandent systematic errors
-e_axis = spectrum_in.e_axis
-n_energies = n_elements(e_axis.mean)
-sys_err  = fltarr(n_energies)
+    if keyword_set(xspec) then begin
+      ;xspec in gneral works with energy depandent systematic errors
+      e_axis = spectrum_in.e_axis
+      n_energies = n_elements(e_axis.mean)
+      sys_err  = fltarr(n_energies)
 
-idx_below10kev = where(e_axis.mean lt 10, cb10)
-sys_err[*] = 0.03
-if cb10 gt 0 then sys_err[idx_below10kev] = 0.05
-idx_below7kev = where(e_axis.mean lt 7, cb7)
-if cb7 gt 0 then sys_err[idx_below7kev] = 0.07
+      idx_below10kev = where(e_axis.mean lt 10, cb10)
+      sys_err[*] = 0.03
+      if cb10 gt 0 then sys_err[idx_below10kev] = 0.05
+      idx_below7kev = where(e_axis.mean lt 7, cb7)
+      if cb7 gt 0 then sys_err[idx_below7kev] = 0.07
 
-sys_err = rebin(sys_err, n_energies,ntimes)
-endif
+      sys_err = rebin(sys_err, n_energies,ntimes)
+    endif
 
 
     stx_write_ospex_fits, spectrum = spectrum_in, srmdata = srm, specpar = specpar, time_shift = time_shift, $
