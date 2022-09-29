@@ -21,7 +21,7 @@
 
 
 ; Folder in which the files downloaded for this demonstration are stored
-out_dir = concat_dir( getenv('stx_demo_data'),'imaging', /d)
+out_dir = concat_dir( getenv('STX_DEMO_DATA'),'imaging', /d)
 
 ;;**************** LOAD DATA - June 7 2020, 21:41 UT
 
