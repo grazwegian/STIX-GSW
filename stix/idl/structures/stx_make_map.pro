@@ -73,7 +73,7 @@ pred_vis = {mapvis: mapvis, $     ; Complex visibility values predicted from the
 
 out_map = make_map(rotate(im_map,1))
 
-id_map = 'STX ' + method + ' MAP'
+id_map = 'STX ' + method + ': '
 out_map.ID = id_map
 
 out_map.dx = pixel[0]
@@ -86,15 +86,7 @@ out_map.time = anytim((anytim(this_time_range[1])+anytim(this_time_range[0]))/2.
 out_map.dur  = anytim(this_time_range[1])-anytim(this_time_range[0])
 
 ;; Mapcenter coordinates
-if vis[0].calibrated eq 1 then begin
-
-  mapcenter = stx_rtn2stx_coord(vis[0].xyoffset, aux_data, /inverse)
-
-endif else begin
-
-  mapcenter = vis[0].xyoffset + aux_data.stx_pointing
-
-endelse
+mapcenter = stx_rtn2stx_coord(vis[0].xyoffset, aux_data, /inverse)
 
 out_map.xc = mapcenter[0]
 out_map.yc = mapcenter[1]
@@ -109,8 +101,8 @@ add_prop, out_map, obs_vis        = vis                   ; Visibility structure
 add_prop, out_map, pred_vis       = pred_vis              ; Visibility values predicted from the reconstucted map       
 add_prop, out_map, aux_data       = aux_data              ; Auxiliary data structure
 add_prop, out_map, time_range     = time_range            ; Time range considered for image reconstruction
-add_prop, out_map, tot_counts     = vis[0].TOT_COUNTS     ; Total number of counts measured by the selected imaging detector
-add_prop, out_map, tot_counts_bkg = vis[0].TOT_COUNTS_BKG ; Estimate of the total number of background counts measured by the selected imaging detector
+;add_prop, out_map, tot_counts     = vis[0].TOT_COUNTS     ; Total number of counts measured by the selected imaging detector
+;add_prop, out_map, tot_counts_bkg = vis[0].TOT_COUNTS_BKG ; Estimate of the total number of background counts measured by the selected imaging detector
 add_prop, out_map, rsun = aux_data.RSUN
 add_prop, out_map, b0   = aux_data.B0
 add_prop, out_map, l0   = aux_data.L0

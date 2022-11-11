@@ -45,7 +45,7 @@ FUNCTION stx_em, pixel_data_summed, aux_data, imsize=imsize, pixel=pixel, $
                  mapcenter=mapcenter, subc_index=subc_index, $
                  maxiter=maxiter, tolerance=tolerance, silent=silent, makemap=makemap
 
-default, subc_index, stix_label2ind(['3a','3b','3c','4a','4b','4c','5a','5b','5c','6a','6b','6c',$
+default, subc_index, stx_label2ind(['3a','3b','3c','4a','4b','4c','5a','5b','5c','6a','6b','6c',$
                                        '7a','7b','7c','8a','8b','8c','9a','9b','9c','10a','10b','10c'])
 
 default, maxiter, 5000
@@ -64,11 +64,11 @@ if pixel[0] ne pixel[1] then message, 'Error: pixel size per dimension must be e
 ;;***************** Phase calibration factors
 
 ;; Grid phase correction
-tmp = read_csv(loc_file( 'GridCorrection.csv', path = getenv('STX_VIS_DEMO') ), header=header, table_header=tableheader, n_table_header=2 )
+tmp = read_csv(loc_file( 'GridCorrection.csv', path = getenv('STX_VIS_PHASE') ), header=header, table_header=tableheader, n_table_header=2 )
 grid_phase_corr = tmp.field2[subc_index]
 
 ;; "Ad hoc" phase correction (for removing residual errors)
-tmp = read_csv(loc_file( 'PhaseCorrFactors.csv', path = getenv('STX_VIS_DEMO')), header=header, table_header=tableheader, n_table_header=3 )
+tmp = read_csv(loc_file( 'PhaseCorrFactors.csv', path = getenv('STX_VIS_PHASE')), header=header, table_header=tableheader, n_table_header=3 )
 ad_hoc_phase_corr = tmp.field2[subc_index]
 
 ; Sum over top and bottom pixels
@@ -125,7 +125,7 @@ n_det_used = n_elements(subc_index)
 countrates = pixel_data_summed.COUNT_RATES[subc_index,*]
 y = reform(countrates, n_det_used*4)
 
-countrates_bkg = pixel_data_summed.COUNT_RATES_ERROR_BKG[subc_index,*]
+countrates_bkg = pixel_data_summed.COUNT_RATES_BKG[subc_index,*]
 b = reform(countrates_bkg, n_det_used*4)
 
 ;;**************** EXPECTATION MAXIMIZATION ALGORITHM
@@ -146,12 +146,12 @@ for iter = 1, maxiter do begin
 
   x = x * transpose(f_div(Hz, Ht1))
 
-  cstat = 2. / n_elements(y[y_index]) * total(y[y_index] * alog(f_div(y[y_index],Hx[y_index])) + Hx[y_index] - y[y_index])
+  cstat = 2. / n_elements(y[y_index]) * total(y[y_index] * alog(f_div(y[y_index],Hx[y_index] + b[y_index])) + Hx[y_index] + b[y_index] - y[y_index])
 
   ; Stopping rule
   if iter gt 10 and (iter mod 25) eq 0 then begin
     emp_back_res = total((x * (Ht1 - Hz))^2)
-    std_back_res = total(x^2 * (f_div(1.0, Hx) # H2))
+    std_back_res = total(x^2 * (f_div(1.0, Hx + b) # H2))
     std_index = f_div(emp_back_res, std_back_res)
 
     if ~keyword_set(silent) then print, iter, std_index, cstat

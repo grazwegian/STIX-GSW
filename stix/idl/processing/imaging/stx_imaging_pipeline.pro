@@ -36,7 +36,7 @@
 ;-
 function stx_imaging_pipeline, stix_uid, time_range, energy_range, bkg_uid=bkg_uid, $
                                xy_flare=xy_flare, imsize=imsize, pixel=pixel, x_ptg=x_ptg, y_ptg=y_ptg, $
-                               use_sas=use_sas, dont_use_sas=dont_use_sas
+                               force_sas=force_sas, no_sas=no_sas
   if n_params() lt 3 then begin
     print, "STX_IMAGING_PIPELINE"
     print, "Syntax: result = stx_imaging_pipeline(stix_uid, time_range, energy_range [, xy_flare=xy_flare, imsize=imsize, pixel=pixel, x_ptg=x_ptg, y_ptg=y_ptg])"
@@ -52,27 +52,31 @@ function stx_imaging_pipeline, stix_uid, time_range, energy_range, bkg_uid=bkg_u
   default, pixel,  [2.,2.]
 
   ;;;;
-  ; Read auxiliary file: first, extract date from time_range[0]
+
+  ; Extract pointing and other ancillary data from auxiliary file covering the input time_range.
+  ; First, extract date from time_range[0]
   time_0 = anytim2utc(anytim(time_range[0], /tai), /ccsds)
   day_0 = strmid(str_replace(time_0,'-'),0,8)
-;  aux_fits_file = aux_data_folder + 'solo_L2_stix-aux-auxiliary_'+day_0+'_V01.fits'
-  ; AUX files changed name in September 2022, therefore:
   aux_fits_file = aux_data_folder + 'solo_L2_stix-aux-ephemeris_'+day_0+'_V01.fits'
   ; Extract data at requested time
   if ~file_test(aux_fits_file) then message,"Cannot find auxiliary data file "+aux_fits_file
-;  aux_data = stx_create_auxiliary_data(aux_fits_file, time_range, /dont_use_sas)
-  aux_data = stx_create_auxiliary_data(aux_fits_file, time_range, use_sas=use_sas, dont_use_sas=dont_use_sas)
+
+  ; If an aspect solution is given as input, then use that one:
+  if keyword_set(x_ptg) and keyword_set(y_ptg) then begin
+    ; we still need to call stx_create_auxiliary_data to get RSUN, L0 and B0 ...
+    aux_data = stx_create_auxiliary_data(aux_fits_file, time_range, /silent)
+    ; ... but overwrite pointing terms with user input
+    aux_data.stx_pointing[0] = x_ptg
+    aux_data.stx_pointing[1] = y_ptg
+  endif else aux_data = stx_create_auxiliary_data(aux_fits_file, time_range, force_sas=force_sas, no_sas=no_sas)
   
-  ; If an aspect solution is given as input, use that one
-  if keyword_set(x_ptg) then aux_data.stx_pointing[0] = x_ptg
-  if keyword_set(y_ptg) then aux_data.stx_pointing[1] = y_ptg
   
   ;;;;
   ; Read and process STIX L1A data
   l1a_file_list = file_search(l1a_data_folder + '*' + stix_uid + '*.fits')
   if l1a_file_list[0] eq '' then message,"Could not find any data for UID "+stix_uid $
      else path_sci_file = l1a_file_list[0]
-  print, " INFO: Found L1A file "+path_sci_file
+  print, " INFO: Found L1(A) file "+path_sci_file
 
   if keyword_set(bkg_uid) then begin
     l1a_file_list = file_search(l1a_data_folder + '*' + bkg_uid + '*.fits')
@@ -87,16 +91,16 @@ function stx_imaging_pipeline, stix_uid, time_range, energy_range, bkg_uid=bkg_u
     print, xy_flare, format='(" *** INFO: Estimated flare location = (",F7.1,", ",F7.1,") arcsec")'
     print, xy_flare / aux_data.rsun, format='(" ... in units of solar radius = (",F6.3,", ",F6.3,")")'
 
-    ; The coordinates given as input to the imaging pipeline have to be conceived in the STIX reference frame.
-    ; Therefore, we perform a transformation from Helioprojective Cartesian to STIX reference frame with 'stx_hpc2stx_coord'
-    mapcenter = stx_hpc2stx_coord(xy_flare, aux_data)
-    xy_flare  = mapcenter
   endif else mapcenter = xy_flare
   
+  ; The coordinates given as input to the imaging pipeline have to be conceived in the STIX reference frame.
+  ; Therefore, we perform a transformation from Helioprojective Cartesian to STIX reference frame with 'stx_hpc2stx_coord'
+  mapcenter = stx_hpc2stx_coord(xy_flare, aux_data)
+  flare_loc  = mapcenter
+
   ; Compute calibrated visibilities
-  ;; vis=stix2vis_sep2021(path_sci_file, time_range, energy_range, mapcenter, aux_data, path_bkg_file=path_bkg_file, xy_flare=xy_flare)
   vis = stx_construct_calibrated_visibility(path_sci_file, time_range, energy_range, mapcenter, $
-                                            path_bkg_file=path_bkg_file, xy_flare=xy_flare)
+                                            path_bkg_file=path_bkg_file, xy_flare=flare_loc)
 
   ; Finally, generate the map using MEM_GE
   out_map = stx_mem_ge(vis,imsize,pixel,aux_data,total_flux=max(abs(vis.obsvis)), /silent)

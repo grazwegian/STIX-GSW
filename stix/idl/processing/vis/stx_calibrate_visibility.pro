@@ -19,7 +19,7 @@
 ;
 ; KEYWORDS:
 ; 
-;   phase_calib_factors: 32-dimensional array containing the phase calibration factors for each detectors (degrees).
+;   phase_calib_factors: 32-element array containing the phase calibration factors for each detectors (degrees).
 ;                        The default phase calibration factors consist of four terms:
 ;                         - a grid correction factor, which keeps into account the phase of the front and the rear grid;
 ;                         - a projection correction factor, if the 'xy_flare' estimate of the flare location is provided 
@@ -29,7 +29,7 @@
 ;                         - a factor which is added so that the reconstructed image is centered in the 
 ;                           coordinates that are saved in the 'XYOFFSET' field of the input visibility structure
 ;   
-;   amp_calib_factors: 32-dimensional array containing amplitude calibration factors. The default values include just the
+;   amp_calib_factors: 32-element array containing amplitude calibration factors. The default values include just the
 ;                       modulation efficiency factor
 ;   
 ;   syserr_sigamp: float, percentage of systematic error to be added to the visibility amplitude errors. 
@@ -62,7 +62,7 @@ n_vis = n_elements(vis)
 modulation_efficiency = !pi^3./(8.*sqrt(2.)) 
 
 ;; Grid phase correction
-tmp = read_csv(loc_file( 'GridCorrection.csv', path = getenv('STX_VIS_DEMO') ), header=header, table_header=tableheader, n_table_header=2 )
+tmp = read_csv(loc_file( 'GridCorrection.csv', path = getenv('STX_VIS_PHASE') ), header=header, table_header=tableheader, n_table_header=2 )
 grid_phase_corr = tmp.field2[vis.ISC - 1]; * (-vis.phase_sense)
 
 ;; Projection correction factor
@@ -70,12 +70,12 @@ xy_flare = vis[0].XY_FLARE
 phase_proj_corr  = fltarr(n_vis)
 if ~xy_flare[0].isnan() then begin
   proj_corr_factor = -xy_flare[0] * 360. * !pi / (180. * 3600. * 8.8) * (r2d_sep + f2r_sep/2.)
-   phase_proj_corr = phase_proj_corr + proj_corr_factor
+  phase_proj_corr = phase_proj_corr + proj_corr_factor
   ;phase_proj_corr  = phase_proj_corr * (-vis.phase_sense)
 endif
 
 ;; "Ad hoc" phase correction (for removing residual errors)
-tmp = read_csv(loc_file( 'PhaseCorrFactors.csv', path = getenv('STX_VIS_DEMO')), header=header, table_header=tableheader, n_table_header=3 )
+tmp = read_csv(loc_file( 'PhaseCorrFactors.csv', path = getenv('STX_VIS_PHASE')), header=header, table_header=tableheader, n_table_header=3 )
 ad_hoc_phase_corr = tmp.field2[vis.ISC - 1]; * (-vis.phase_sense)
 
 ;; Mapcenter correction

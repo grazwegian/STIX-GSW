@@ -50,20 +50,21 @@ pro stx_estimate_flare_location, path_sci_file, time_range, aux_data, flare_loc=
 default, energy_range, [6.,10.]
 default, imsize, [512,512]
 default, mapcenter, [0., 0.]
-default, subc_index, stix_label2ind(['10a','10b','10c','9a','9b','9c','8a','8b','8c','7a','7b','7c'])
+default, subc_index, stx_label2ind(['10a','10b','10c','9a','9b','9c','8a','8b','8c','7a','7b','7c'])
 default, silent, 0
 default, this_win, 4
 
 ;;******* Determine the pixel size from the apparent radius of the Sun for computing a full-disk Back Projection map
 rsun = aux_data.RSUN
-pixel = rsun * 2.6 / imsize
+pixel = rsun * 2.6 / imsize ; 2.6 is chosen arbitrarily so that field of view Back Projection map used 
+                            ; for determining the flare location contains the entire solar disk 
 
 ;;******* Construct the visibility structure
 mapcenter_stix = stx_hpc2stx_coord(mapcenter, aux_data)
 
-vis = stx_construct_calibrated_visibility(path_sci_file, time_range, energy_range, mapcenter_stix, $
-                                          path_bkg_file=path_bkg_file,subc_index=subc_index,  /silent, _extra=extra)
-
+vis = stx_construct_visibility(path_sci_file, time_range, energy_range, mapcenter_stix, $
+                                          path_bkg_file=path_bkg_file,subc_index=subc_index,  /silent, $
+                                          _extra=extra)
 
 ;;******* Use Giordano's (u,v) points: no need to perform projection correction (see Giordano et al., 2015)
 subc_str = stx_construct_subcollimator()
@@ -72,6 +73,8 @@ u = -uv.u * subc_str.phase
 v = -uv.v * subc_str.phase
 vis.u = u[subc_index]
 vis.v = v[subc_index]
+
+vis = stx_calibrate_visibility(vis)
 
 ;;******* Compute the Back Projection map
 bp_nat_map = stx_bproj(vis,imsize,pixel,aux_data)
@@ -97,9 +100,9 @@ flare_loc = [srcstr.SRCX, srcstr.SRCY]
 if ~silent then begin
   
   loadct,3, /silent
-  
-  window,this_win,xsize=1200,ysize=600
-  cleanplot
+  device, Window_State=win_state
+  if win_state[this_win] then wset, this_win else window,this_win,xsize=1200,ysize=600
+  cleanplot, /silent
   !p.multi = [0,2,1]
                         
   ;;******* Plot of full-disk Back Projection map                      
