@@ -92,7 +92,7 @@ pro  stx_convert_pixel_data, fits_path_data = fits_path_data, fits_path_bk = fit
   time_shift = time_shift, energy_shift = energy_shift, distance = distance, flare_location = flare_location, $
   det_ind = det_ind, pix_ind = pix_ind, $
   shift_duration = shift_duration, no_attenuation = no_attenuation, sys_uncert = sys_uncert, $
-  generate_fits = generate_fits, specfile = specfile, srmfile = srmfile,$
+  generate_fits = generate_fits, specfile = specfile, srmfile = srmfile, xspec = xspec,$
   background_data = background_data, plot = plot, ospex_obj = ospex_obj
 
 
@@ -105,6 +105,7 @@ pro  stx_convert_pixel_data, fits_path_data = fits_path_data, fits_path_bk = fit
 
   default, flare_location, [0.,0.]
   default, shift_duration, 0
+  default, xspec, 0
   default, plot, 1
   default, det_ind, 'top24'
 
@@ -292,7 +293,7 @@ pro  stx_convert_pixel_data, fits_path_data = fits_path_data, fits_path_bk = fit
 
   stx_convert_science_data2ospex, spectrogram = spectrogram, specpar=specpar, time_shift = time_shift, $
     data_level = data_level, data_dims = data_dims, fits_path_bk = fits_path_bk, distance = distance, $
-    fits_path_data = fits_path_data, flare_location = flare_location, eff_ewidth = eff_ewidth, sys_uncert = sys_uncert, $
+    fits_path_data = fits_path_data, flare_location = flare_location, eff_ewidth = eff_ewidth, xspec = xspec, sys_uncert = sys_uncert, $
     plot = plot, background_data = background_data, fits_info_params = fits_info_params, ospex_obj = ospex_obj
 
 end

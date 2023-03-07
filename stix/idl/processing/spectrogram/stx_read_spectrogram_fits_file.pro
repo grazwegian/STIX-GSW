@@ -80,7 +80,7 @@
 pro stx_read_spectrogram_fits_file, fits_path, time_shift, primary_header = primary_header, data_str = data, data_header = data_header, control_str = control, $
   control_header= control_header, energy_str = energy, energy_header = energy_header, t_axis = t_axis, e_axis = e_axis, $
   energy_shift = energy_shift, use_discriminators = use_discriminators, keep_short_bins = keep_short_bins, replace_doubles = replace_doubles, $
-  shift_duration = shift_duration
+  shift_duration = shift_duration, time_bin_filename = time_bin_filename
 
   default, time_shift, 0
   default, use_discriminators, 1
@@ -247,7 +247,10 @@ pro stx_read_spectrogram_fits_file, fits_path, time_shift, primary_header = prim
 
   endelse
 
-
+  if keyword_set(time_bin_filename) then begin
+    stx_rebin_time_from_file, time_bin_filename, hstart_time, counts, triggers, time_bin_center, duration, triggers_err, counts_err, rcr, time_shift = time_shift
+  endif
+  
   ; create time object
   stx_time_obj = stx_time()
   stx_time_obj.value =  anytim(hstart_time , /mjd)

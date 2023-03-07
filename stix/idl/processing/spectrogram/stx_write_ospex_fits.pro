@@ -56,11 +56,13 @@ pro stx_write_ospex_fits, $
   ph_edges = ph_edges, $
   time_shift = time_shift, $
   xspec = xspec, $
+  sys_err = sys_err, $
   fits_info_params = fits_info_params, $
   _extra = extra_keys
 
   default, any_specfile, 0
   default, xspec, 0
+
   if ~keyword_set(any_specfile) then begin
     print,  'To use SPEX_ANY_SPECFILE strategy '
     print,  'change self->setstrategy, '+string(39B)+'SPEX_HESSI_SPECFILE' +string(39B)+ ' to self->setstrategy, '+string(39B)+'SPEX_ANY_SPECFILE'+string(39B)
@@ -186,8 +188,9 @@ pro stx_write_ospex_fits, $
     maxchan = lindgen(nchan) + 1, $
     e_min = reform( ct_edges_2[0,*] ), $
     e_max = reform( ct_edges_2[1,*] ), e_unit = 'kev', $
-    err_code = err_code, _extra = extra_keys, err_msg = err_msg
- 
+    err_code = err_code,  exposure = timedel*livetime, sys_err = sys_err, _extra = extra_keys, err_msg = err_msg
+
+
   if  is_struct( specpar ) then begin
     specpar = str_sub2top(specpar)
     ; add object information as the last extension

@@ -85,7 +85,7 @@ pro  stx_convert_spectrogram, fits_path_data = fits_path_data, fits_path_bk = fi
   time_shift = time_shift, energy_shift = energy_shift, distance = distance, flare_location = flare_location, $
   replace_doubles = replace_doubles, keep_short_bins = keep_short_bins, apply_time_shift = apply_time_shift,$
   shift_duration = shift_duration, no_attenuation = no_attenuation, sys_uncert = sys_uncert, $
-  generate_fits = generate_fits, specfile = specfile, srmfile = srmfile,$
+  generate_fits = generate_fits, specfile = specfile, srmfile = srmfile, xspec = xspec,$
   background_data = background_data, plot = plot, ospex_obj = ospex_obj
 
   if n_elements(time_shift) eq 0 then begin
@@ -97,10 +97,11 @@ pro  stx_convert_spectrogram, fits_path_data = fits_path_data, fits_path_bk = fi
 
   default, flare_location, [0.,0.]
   default, plot, 1
+  default, xspec, 0
 
   stx_read_spectrogram_fits_file, fits_path_data, time_shift, primary_header = primary_header, data_str = data_str, data_header = data_header, control_str = control_str, $
     control_header= control_header, energy_str = energy_str, energy_header = energy_header, t_axis = t_axis, energy_shift = energy_shift,  e_axis = e_axis , use_discriminators = 0,$
-    replace_doubles = replace_doubles, keep_short_bins = keep_short_bins, shift_duration = shift_duration
+    replace_doubles = replace_doubles, keep_short_bins = keep_short_bins, shift_duration = shift_duration, time_bin_filename  = time_bin_filename
 
   data_level = 4
 
@@ -234,7 +235,7 @@ pro  stx_convert_spectrogram, fits_path_data = fits_path_data, fits_path_bk = fi
   
   stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar, time_shift = time_shift, data_level = data_level, data_dims = data_dims, fits_path_bk = fits_path_bk, $
     distance = distance, fits_path_data = fits_path_data, flare_location = flare_location, eff_ewidth = eff_ewidth, fits_info_params = fits_info_params, sys_uncert = sys_uncert, $
-    background_data = background_data, plot = plot, generate_fits = generate_fits, ospex_obj = ospex_obj
+    xspec = xspec, background_data = background_data, plot = plot, generate_fits = generate_fits, ospex_obj = ospex_obj
 
 end
 
