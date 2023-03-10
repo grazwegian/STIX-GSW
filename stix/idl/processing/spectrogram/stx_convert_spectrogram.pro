@@ -85,7 +85,7 @@ pro  stx_convert_spectrogram, fits_path_data = fits_path_data, fits_path_bk = fi
   time_shift = time_shift, energy_shift = energy_shift, distance = distance, flare_location = flare_location, $
   replace_doubles = replace_doubles, keep_short_bins = keep_short_bins, apply_time_shift = apply_time_shift,$
   shift_duration = shift_duration, no_attenuation = no_attenuation, sys_uncert = sys_uncert, $
-  generate_fits = generate_fits, specfile = specfile, srmfile = srmfile, xspec = xspec,$
+  generate_fits = generate_fits, specfile = specfile, srmfile = srmfile, xspec = xspec, time_bin_filename  = time_bin_filename, $
   background_data = background_data, plot = plot, ospex_obj = ospex_obj
 
   if n_elements(time_shift) eq 0 then begin

@@ -80,10 +80,10 @@ function stx_fsw_sd_spectrogram2ospex, spectrogram, specpar = specpar, time_shif
     grid_factors_proc[idx_nontop24] = grid_factors_file[idx_nontop24]
     grid_factor  = average(grid_factors_proc[grids_used])
    
-;   grid_factors_proc = stx_tungsten_transmission(flare_location, ph_in)
- ;  grid_factors_proc[*,idx_nontop24] = transpose(rebin(grid_factors_file[idx_nontop24],n_elements(idx_nontop24),n_elements(ph_in)))
- ;   grid_factors  = average(grid_factors_proc[*,grids_used],2)
-;    grid_factor = grid_factors
+   grid_factors_proc = stx_tungsten_transmission(flare_location, ph_in)
+   grid_factors_proc[*,idx_nontop24] = transpose(rebin(grid_factors_file[idx_nontop24],n_elements(idx_nontop24),n_elements(ph_in)))
+   grid_factors  = average(grid_factors_proc[*,grids_used],2)
+   grid_factor = grid_factors
   endif else begin
     print, 'Using nominal (on axis) grid transmission'
     grid_factor = average(grid_factors_file[grids_used])
