@@ -150,7 +150,7 @@ pro stx_write_ospex_fits, $
     any_specfile = any_specfile
 
   units_arr = [ 'counts/s', 'counts/s', ' ', ' ', ' ', 's', 's' ]
-  
+
   backapp = fits_info_params.background_subtracted ? 'T' : 'F'
   backfile = fits_info_params.fits_background_file
 
@@ -158,8 +158,11 @@ pro stx_write_ospex_fits, $
   rate_struct = stx_rate_header( nchan = nchan, exposure = exposure, timezeri = timezeri, tstartf = tstartf, $
     tstopi = tstopi, tstopf = tstopf, backapp = backapp, backfile = backfile )
 
+  stx_gsw_version, version = version, /silent
+
   fxaddpar, primary_header, 'PARENT', fits_info_params.fits_data_file, "Parent Observation Data File", before='AUTHOR'
   fxaddpar, primary_header, 'DATA_LEVEL', stx_data_level2label(fits_info_params.data_level), "Observation Data Compression Level", before='AUTHOR'
+  fxaddpar, primary_header, 'HISTORY',  'STIX GSW Version '+version[0]+ ' was used to process this data'
 
   fxaddpar, specheader, 'REQUEST_ID', fits_info_params.uid, "Unique Request ID for the Observation", before='AUTHOR'
   fxaddpar, specheader, 'SUN_DISTANCE', fits_info_params.distance, "Distance in AU to Sun", before='AUTHOR'
