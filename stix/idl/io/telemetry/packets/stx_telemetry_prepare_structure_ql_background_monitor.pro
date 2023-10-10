@@ -292,7 +292,7 @@ pro stx_telemetry_prepare_structure_ql_background_monitor_read, solo_slices=solo
       background = slice_background
       triggers = slice_triggers
     endif else begin
-      background = [counts, slice_background]
+      background = [[background], [slice_background]]
       triggers = [triggers, slice_triggers]
     endelse
 
