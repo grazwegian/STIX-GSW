@@ -22,7 +22,7 @@
 ;    specpar : in, type="float",
 ;               spectrum control and information parameters for OSPEX
 ;
-;    time_shift : in, type="float", 
+;    time_shift : in, type="float",
 ;               Applied light travel time correction
 ;
 ;    data_level : in, type="int", default="1.0"
@@ -37,14 +37,14 @@
 ;    distance : in, optional, type="float", default taken from FITS header
 ;               The distance between Solar Orbiter and the Sun centre in Astronomical Units needed to correct flux.
 ;
-;    flare_location_hpc : in, type=" 2 element float array", 
+;    flare_location_hpc : in, type=" 2 element float array",
 ;               the location of the flare (X,Y) in Helioprojective Cartesian coordinates as seen from Solar Orbiter [arcsec]
-;               If no location is passed in the on-axis approximation is used to calculate the grid response. In this case 
+;               If no location is passed in the on-axis approximation is used to calculate the grid response. In this case
 ;               a value [Nan, Nan] is passed to the output files.
 ;
 ;    aux_fits_file : in, required if flare_location_hpc is passed in, type="string"
 ;                the path of the auxiliary ephemeris FITS file to be read."
-;                
+;
 ;    eff_ewidth : in, type="float arr"
 ;               an output float value
 ;
@@ -92,13 +92,13 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
 
   default, plot, 0
 
-    time_range = atime(stx_time2any([spectrogram.time_axis.time_start[0], spectrogram.time_axis.time_end[-1]]))
-    
-    if n_elements(flare_location_hpc) eq 2 and n_elements(aux_fits_file) eq 0 then aux_fits_file =  stx_get_ephemeris_file( time_range[0], time_range[1])
+  time_range = atime(stx_time2any([spectrogram.time_axis.time_start[0], spectrogram.time_axis.time_end[-1]]))
 
-    if n_elements(flare_location_stx) eq 0 then flare_location_stx = stx_location4spectroscopy( flare_location_hpc = flare_location_hpc, aux_fits_file = aux_fits_file, $
-      time_range = time_range, silent = silent)
-    specpar.flare_xyoffset = flare_location_stx
+  if n_elements(flare_location_hpc) eq 2 and n_elements(aux_fits_file) eq 0 then aux_fits_file =  stx_get_ephemeris_file( time_range[0], time_range[1])
+
+  if n_elements(flare_location_stx) eq 0 then flare_location_stx = stx_location4spectroscopy( flare_location_hpc = flare_location_hpc, aux_fits_file = aux_fits_file, $
+    time_range = time_range, silent = silent)
+  specpar.flare_xyoffset = flare_location_stx
 
   distance = fits_info_params.distance
 
@@ -163,12 +163,12 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
 
     energy_bins = spectrogram.energy_axis.low_fsw_idx
 
-    corrected_counts_bk =  corrected_counts_bk[energy_bins,*] 
+    corrected_counts_bk =  corrected_counts_bk[energy_bins,*]
 
     if keyword_set(elut_correction) then begin
       corrected_counts_bk =  corrected_counts_bk * reproduce(eff_ewidth, n_times)
     endif
-    
+
     corrected_counts_bk =  reform(corrected_counts_bk,[n_elements(energy_bins), n_times])
 
     spec_in_bk = total(reform(spec_in_bk,[dim_counts_bk[0], n_detectors_bk, ntimes_bk ]),2)
@@ -177,10 +177,10 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
 
     spec_in_bk  = reform(spec_in_bk,dim_counts_bk[0], n_times)
 
-    spec_in_bk =  spec_in_bk[energy_bins,*] 
+    spec_in_bk =  spec_in_bk[energy_bins,*]
 
     if keyword_set(elut_correction) then begin
-    spec_in_bk =  spec_in_bk * reproduce(eff_ewidth, n_times)
+      spec_in_bk =  spec_in_bk * reproduce(eff_ewidth, n_times)
     endif
 
     spec_in_bk =  reform(spec_in_bk,[n_elements(energy_bins), n_times])
@@ -192,10 +192,10 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
 
     error_bk  = reform(error_bk, dim_counts_bk[0], n_times)
 
-    error_bk =  error_bk[energy_bins,*] 
+    error_bk =  error_bk[energy_bins,*]
 
     if keyword_set(elut_correction) then begin
-       error_bk =  error_bk * reproduce(eff_ewidth, n_times)
+      error_bk =  error_bk * reproduce(eff_ewidth, n_times)
     endif
 
     error_bk =  reform(error_bk,[n_elements(energy_bins), n_times])
@@ -246,7 +246,7 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
   total_error = total_error[new_energies,*]
   n_energies = n_energy_edges-1
 
-  ;insert the information from the telemetry file into the expected stx_fsw_sd_spectrogram structure
+
   spectrogram = { $
     type          : "stx_fsw_sd_spectrogram", $
     counts        : spec_in_corr, $
@@ -257,6 +257,68 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
     detector_mask : spectrogram.detector_mask, $
     rcr           : spectrogram.rcr,$
     error         : total_error}
+
+sum_fine_bins = 0
+
+if sum_fine_bins then begin 
+  
+  ospex4binning = ospex(/no)
+  ospex4binning -> set, spex_ct_edges = e_axis_new.edges_2
+  data_obj = ospex4binning->get(/obj,class='spex_data')
+  ;spec_in_corr  = spec_in_corr  / reproduce(eff_ewidth, n_times)
+  elut_filename = stx_date2elut_file(time_range[0])
+  stx_read_elut, ekev_actual = ekev_actual, elut_filename = elut_filename
+  
+  fine_e = [4, 5.5, 6.3, 7.3, 8, 9, 10, 11, 13, 15, 17, 19, 21, 23, 25, 28, 32, 36, 40, 45, 50, 56, 63, 70, 76, 84, 100, 120, 150]
+
+  energy_ranges = get_edge_products(fine_e, /edges_2)
+  counts_str = {data:spec_in_corr, edata:total_error, ltime:eff_livetime_fraction_expanded}
+
+  energy_summed_counts = data_obj->bin_data(data = counts_str, intervals = energy_ranges, $
+    eresult = energy_summed_error, ltime = energy_summed_ltime, index = index)
+   ltime  = reform(energy_summed_ltime[0,*])
+   
+  e_axis_summed = stx_construct_energy_axis(energy_edges = fine_e, select = indgen(n_elements(index[0,*])+1))
+  energy_edges_used = where_arr(fix(10*e_axis.edges_1), fix(10*e_axis_summed.edges_1))
+  n_energy_edges = n_elements(energy_edges_used)
+  n_energies = n_energy_edges-1
+  
+  pixels_used = where( spectrogram.pixel_mask gt 0)
+  n_pixels = n_elements(pixels_used)
+  detectors_used = where(spectrogram.detector_mask gt 0)
+  n_detectors = n_elements(detectors_used)
+  
+  ave_edge  = mean(reform(ekev_actual[energy_edges_used, pixels_used, detectors_used, 0], n_energy_edges, n_pixels, n_detectors), dim = 2)
+  ave_edge  = mean(reform(ave_edge, n_energy_edges, n_detectors), dim = 2)
+
+  edge_products, ave_edge, width = ewidth
+
+  eff_ewidth =  (e_axis_summed.width)/ewidth
+
+  energy_summed_counts =  energy_summed_counts * reform(reproduce(eff_ewidth, n_times),n_energies, n_times)
+
+  energy_summed_counts =  reform(energy_summed_counts,[n_energies, n_times])
+
+  energy_summed_error =  energy_summed_error * reform(reproduce(eff_ewidth, n_times),n_energies, n_times)
+
+  energy_summed_error =  reform(energy_summed_error, [n_energies, n_times])
+
+  obj_destroy, ospex4binning
+  obj_destroy, data_obj
+
+  ;insert the information from the telemetry file into the expected stx_fsw_sd_spectrogram structure
+  spectrogram = { $
+    type          : "stx_fsw_sd_spectrogram", $
+    counts        : energy_summed_counts, $
+    trigger       : transpose(spectrogram.trigger), $
+    time_axis     : spectrogram.time_axis , $
+    energy_axis   : e_axis_summed, $
+    pixel_mask    : spectrogram.pixel_mask , $
+    detector_mask : spectrogram.detector_mask, $
+    rcr           : spectrogram.rcr,$
+    error         : energy_summed_error}
+
+endif 
 
   uid = fits_info_params.uid
 
