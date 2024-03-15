@@ -246,7 +246,7 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
   total_error = total_error[new_energies,*]
   n_energies = n_energy_edges-1
 
-
+  ;insert the information from the telemetry file into the expected stx_fsw_sd_spectrogram structure
   spectrogram = { $
     type          : "stx_fsw_sd_spectrogram", $
     counts        : spec_in_corr, $
