@@ -269,6 +269,9 @@ if sum_fine_bins then begin
   elut_filename = stx_date2elut_file(time_range[0])
   stx_read_elut, ekev_actual = ekev_actual, elut_filename = elut_filename
   
+  echan_filename = stx_date2echan_file(time_range[0])
+  science_energy_channels = stx_science_energy_channels(/reset, basefile = echan_filename)
+  
   fine_e = [4, 5.5, 6.3, 7.3, 8, 9, 10, 11, 13, 15, 17, 19, 21, 23, 25, 28, 32, 36, 40, 45, 50, 56, 63, 70, 76, 84, 100, 120, 150]
 
   energy_ranges = get_edge_products(fine_e, /edges_2)
