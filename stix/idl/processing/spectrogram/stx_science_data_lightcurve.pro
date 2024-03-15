@@ -48,6 +48,12 @@
 ;               
 ;    sys_uncert : in, optional keyword, default="0.05"
 ;               The level of systematic uncertainty to be added to the data
+;               
+;    elut_correction : in, optional keyword, 0 or 1, default ="0"  
+;                     The ELUT correction keyword is passed on the the conversion routines. If set the ELUT correction is 
+;                     performed on each energy bin.  
+;                     N.B. for lightcurves the default is currently to not perform the ELUT correction as this can increase inaccuracy 
+;                     in the case where many energy channels are combined.            
 ;
 ;    plot_obj : out, type="Object"
 ;               Plotman Object containing the binned lightcurve. Supplying this keyword will open a plotman widget showing
@@ -77,6 +83,7 @@
 ;    31-Jan-2023 - AFB (FHNW), it is now possible to pass multiple FITS files in fits_path and the output
 ;                              structure will be the concatenation of all the input files
 ;    19-Jun-2023 - ECMD (Graz), added _extra keyword for pass through to stx_convert_... routines as suggested by ianan
+;    14-Dec-2023 - ECMD (Graz), added elut_correction keyword for pass through to conversion routines 
 ;
 ;-
 function stx_science_data_lightcurve, fits_path, energy_ranges = edges_in,  time_min = time_min,  $
@@ -277,7 +284,8 @@ end
 ; :history:
 ;    02-Jul-2022 - ECMD (Graz), initial release
 ;    23-Oct-2023 - ECMD (Graz), updated demo to L1 files 
-;
+;    16-Feb-2024 - ECMD (Graz), use stx_get_science_fits_file to retrieve data 
+;   
 ;-
 pro stx_demo_lightcurve
 

@@ -40,6 +40,9 @@
 ;    aux_fits_file : in, required if flare_location_hpc is passed in, type="string"
 ;                the path of the auxiliary ephemeris FITS file to be read."
 ;                
+;    elut_correction : in, optional keyword, 0 or 1, default ="0"
+;                     If set the ELUT correction is performed on each energy bin.
+;                     
 ;    shift_duration : in, type="boolean", default="0"
 ;                     Shift all time bins by 1 to account for FSW time input discrepancy prior to 09-Dec-2021.
 ;                     N.B. WILL ONLY WORK WITH FULL TIME RESOLUTION DATA WHICH IS OFTEN NOT THE CASE FOR PIXEL DATA.
@@ -85,6 +88,7 @@
 ;    15-Mar-2023 - ECMD (Graz), updated to handle release version of L1 FITS files
 ;    16-Jun-2023 - ECMD (Graz), for a source location dependent response estimate, the location in HPC and the auxiliary ephemeris file must be provided.
 ;    06-Dec-2023 - ECMD (Graz), added silent keyword, more information is now printed if not set
+;    14-Dec-2023 - ECMD (Graz), added elut_correction keyword to allow the ELUT correction to be skipped 
 ;
 ;-
 pro  stx_convert_spectrogram, fits_path_data = fits_path_data, fits_path_bk = fits_path_bk,$
