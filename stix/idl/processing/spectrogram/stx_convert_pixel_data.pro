@@ -99,6 +99,7 @@
 ;    16-Jun-2023 - ECMD (Graz), for a source location dependent response estimate, the location in HPC and the auxiliary ephemeris file must be provided.
 ;    06-Dec-2023 - ECMD (Graz), added silent keyword, more information is now printed if not set
 ;    14-Dec-2023 - ECMD (Graz), added elut_correction keyword to allow the ELUT correction to be skipped 
+;    20-Mar-2024 - ECMD (Graz), added sum_fine_bins keyword
 ;
 ;-
 pro  stx_convert_pixel_data, fits_path_data = fits_path_data, fits_path_bk = fits_path_bk, $

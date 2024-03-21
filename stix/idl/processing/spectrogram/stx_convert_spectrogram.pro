@@ -89,13 +89,14 @@
 ;    16-Jun-2023 - ECMD (Graz), for a source location dependent response estimate, the location in HPC and the auxiliary ephemeris file must be provided.
 ;    06-Dec-2023 - ECMD (Graz), added silent keyword, more information is now printed if not set
 ;    14-Dec-2023 - ECMD (Graz), added elut_correction keyword to allow the ELUT correction to be skipped 
+;    20-Mar-2024 - ECMD (Graz), added sum_fine_bins keyword
 ;
 ;-
 pro  stx_convert_spectrogram, fits_path_data = fits_path_data, fits_path_bk = fits_path_bk,$
   aux_fits_file = aux_fits_file, flare_location_hpc = flare_location_hpc, flare_location_stx = flare_location_stx, $
   time_shift = time_shift, energy_shift = energy_shift, distance = distance, replace_doubles = replace_doubles, $
   keep_short_bins = keep_short_bins, apply_time_shift = apply_time_shift, elut_correction = elut_correction, $
-  shift_duration = shift_duration, no_attenuation = no_attenuation, sys_uncert = sys_uncert, $
+  shift_duration = shift_duration, no_attenuation = no_attenuation, sys_uncert = sys_uncert, sum_fine_bins = sum_fine_bins, $
   generate_fits = generate_fits, specfile = specfile, srmfile = srmfile, silent = silent, $
   background_data = background_data, plot = plot, ospex_obj = ospex_obj
 
@@ -264,7 +265,7 @@ endif
     data_dims = data_dims, fits_path_bk = fits_path_bk, fits_path_data = fits_path_data, $
     elut_correction = elut_correction, eff_ewidth = eff_ewidth, fits_info_params = fits_info_params, sys_uncert = sys_uncert, $
     aux_fits_file = aux_fits_file, flare_location_hpc = flare_location_hpc, flare_location_stx = flare_location_stx, $
-    silent = silent, background_data = background_data, plot = plot, generate_fits = generate_fits, ospex_obj = ospex_obj
+    silent = silent, sum_fine_bins = sum_fine_bins, background_data = background_data, plot = plot, generate_fits = generate_fits, ospex_obj = ospex_obj
 
 end
 
