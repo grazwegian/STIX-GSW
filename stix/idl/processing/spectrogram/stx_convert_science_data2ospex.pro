@@ -19,10 +19,10 @@
 ;    spectrogram : in, type="stx_fsw_sd_spectrogram", default="1.0"
 ;               the spectrogram structure containing the data
 ;
-;    specpar : in, type="float", default="1.0"
+;    specpar : in, type="float",
 ;               spectrum control and information parameters for OSPEX
 ;
-;    time_shift : in, type="float", default="1.0"
+;    time_shift : in, type="float",
 ;               Applied light travel time correction
 ;
 ;    data_level : in, type="int", default="1.0"
@@ -37,8 +37,13 @@
 ;    distance : in, optional, type="float", default taken from FITS header
 ;               The distance between Solar Orbiter and the Sun centre in Astronomical Units needed to correct flux.
 ;
-;    flare_location : in, type="float array", default="[0.,0.]"
-;               the location of the flare in heliocentric coordinates as seen from Solar Orbiter
+;    flare_location_hpc : in, type=" 2 element float array",
+;               the location of the flare (X,Y) in Helioprojective Cartesian coordinates as seen from Solar Orbiter [arcsec]
+;               If no location is passed in the on-axis approximation is used to calculate the grid response. In this case
+;               a value [Nan, Nan] is passed to the output files.
+;
+;    aux_fits_file : in, required if flare_location_hpc is passed in, type="string"
+;                the path of the auxiliary ephemeris FITS file to be read."
 ;
 ;    eff_ewidth : in, type="float arr"
 ;               an output float value
@@ -75,21 +80,29 @@
 ;                               added keyword to allow the user to specify the systematic uncertainty
 ;                               pass through structure of info parameters to write in FITS file
 ;    16-Aug-2022 - ECMD (Graz), pass out background data structure for plotting
+;    16-Jun-2023 - ECMD (Graz), for a source location dependent response estimate, the location in HPC and the auxiliary ephemeris file must be provided.
 ;
 ;-
-pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar, time_shift = time_shift, data_level = data_level, data_dims = data_dims,  fits_path_bk = fits_path_bk,$
-  distance = distance, fits_path_data = fits_path_data, fits_info_params = fits_info_params, flare_location = flare_location, eff_ewidth = eff_ewidth, sys_uncert = sys_uncert,  $
-  xspec = xspec, background_data = background_data, plot = plot, generate_fits = generate_fits, pickfile = pickfile, ospex_obj = ospex_obj
+pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar, time_shift = time_shift, data_level = data_level, $
+  data_dims = data_dims, fits_path_bk = fits_path_bk, fits_path_data = fits_path_data, fits_info_params = fits_info_params, $
+  aux_fits_file = aux_fits_file, flare_location_hpc = flare_location_hpc, flare_location_stx = flare_location_stx, $
+  eff_ewidth = eff_ewidth, sys_uncert = sys_uncert, xspec = xspec, elut_correction = elut_correction, silent = silent, $
+  background_data = background_data, plot = plot, generate_fits = generate_fits, pickfile = pickfile, ospex_obj = ospex_obj
+
 
   default, plot, 0
 
-  ;if distance is not set use the average value from the fits header
-  stx_get_header_corrections, fits_path_data, distance = header_distance
-  default, distance, header_distance
-  print, 'Using Solar Orbiter distance of : ' + strtrim(distance,2) +  ' AU'
+    time_range = atime(stx_time2any([spectrogram.time_axis.time_start[0], spectrogram.time_axis.time_end[-1]]))
+    
+    if n_elements(flare_location_hpc) eq 2 and n_elements(aux_fits_file) eq 0 then aux_fits_file =  stx_get_ephemeris_file( time_range[0], time_range[1])
+
+    if n_elements(flare_location_stx) eq 0 then flare_location_stx = stx_location4spectroscopy( flare_location_hpc = flare_location_hpc, aux_fits_file = aux_fits_file, $
+      time_range = time_range, silent = silent)
+    specpar.flare_xyoffset = flare_location_stx
+
+  distance = fits_info_params.distance
 
   dist_factor = 1./(distance^2.)
-
 
   n_energies = data_dims[0]
   n_detectors = data_dims[1]
@@ -150,10 +163,13 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
 
     energy_bins = spectrogram.energy_axis.low_fsw_idx
 
-    corrected_counts_bk =  corrected_counts_bk[energy_bins,*]/reproduce(eff_ewidth, n_times)
+    corrected_counts_bk =  corrected_counts_bk[energy_bins,*]
+
+    if keyword_set(elut_correction) then begin
+      corrected_counts_bk =  corrected_counts_bk * reproduce(eff_ewidth, n_times)
+    endif
 
     corrected_counts_bk =  reform(corrected_counts_bk,[n_elements(energy_bins), n_times])
-
 
     spec_in_bk = total(reform(spec_in_bk,[dim_counts_bk[0], n_detectors_bk, ntimes_bk ]),2)
 
@@ -161,7 +177,11 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
 
     spec_in_bk  = reform(spec_in_bk,dim_counts_bk[0], n_times)
 
-    spec_in_bk =  spec_in_bk[energy_bins,*]/reproduce(eff_ewidth, n_times)
+    spec_in_bk =  spec_in_bk[energy_bins,*]
+
+    if keyword_set(elut_correction) then begin
+      spec_in_bk =  spec_in_bk * reproduce(eff_ewidth, n_times)
+    endif
 
     spec_in_bk =  reform(spec_in_bk,[n_elements(energy_bins), n_times])
 
@@ -172,10 +192,13 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
 
     error_bk  = reform(error_bk, dim_counts_bk[0], n_times)
 
-    error_bk =  error_bk[energy_bins,*]/reproduce(eff_ewidth, n_times)
+    error_bk =  error_bk[energy_bins,*]
+
+    if keyword_set(elut_correction) then begin
+      error_bk =  error_bk * reproduce(eff_ewidth, n_times)
+    endif
 
     error_bk =  reform(error_bk,[n_elements(energy_bins), n_times])
-
 
     spec_in_corr = corrected_counts - corrected_counts_bk
 
@@ -267,7 +290,7 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
 
   ospex_obj = stx_fsw_sd_spectrogram2ospex( spectrogram, specpar = specpar, time_shift= time_shift, ph_energy_edges = ph_in, $
     /include_damage, generate_fits = generate_fits, xspec = xspec, /tail, livetime_fraction = eff_livetime_fraction, $
-    dist_factor = dist_factor, flare_location = flare_location, sys_uncert = sys_uncert, fits_info_params = fits_info_params, background_data = background_data)
+    dist_factor = dist_factor, flare_location_stx = flare_location_stx, sys_uncert = sys_uncert, fits_info_params = fits_info_params, background_data = background_data, silent = silent)
 
   if keyword_set(plot) then begin
     ospex_obj ->gui

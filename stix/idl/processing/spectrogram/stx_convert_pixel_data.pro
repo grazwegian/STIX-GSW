@@ -34,9 +34,12 @@
 ;               Shift all energies by this value in keV. Rarely needed only for cases where there is a significant shift
 ;               in calibration before a new ELUT can be uploaded.
 ;
-;    flare_location : in, type="float array", default="[0.,0.]"
-;               the location of the flare in heliocentric coordinates as seen from Solar Orbiter
+;    flare_location_hpc : in, type="2 element float array"
+;               the location of the flare (X,Y) in Helioprojective Cartesian coordinates as seen from Solar Orbiter [arcsec]
 ;
+;    aux_fits_file : in, required if flare_location_hpc is passed in, type="string"
+;                the path of the auxiliary ephemeris FITS file to be read."
+;               
 ;    det_ind : in, type="int array", default="all detectors  present in observation"
 ;              indices of detectors to sum when making spectrogram
 ;
@@ -60,7 +63,10 @@
 ;
 ;    srmfile : in, type="string", default="'stx_srm_'+ UID + '.fits'"
 ;                    File name to use when saving the srm FITS file for OSPEX input.
-;
+;                    
+;    silent : in, type="int", default="0"
+;             If set prevents informational messages being displayed.
+;             
 ;    background_data : out, type="stx_background_data structure"
 ;                     Structure containing the subtracted background for external plotting.
 ;
@@ -87,28 +93,32 @@
 ;                               generate structure of info parameters to pass through to FITS file
 ;    16-Aug-2022 - ECMD (Graz), information about subtracted background can now be passed out
 ;    15-Mar-2023 - ECMD (Graz), updated to handle release version of L1 FITS files
+;    16-Jun-2023 - ECMD (Graz), for a source location dependent response estimate, the location in HPC and the auxiliary ephemeris file must be provided.
+;    06-Dec-2023 - ECMD (Graz), added silent keyword, more information is now printed if not set
 ;
 ;-
 pro  stx_convert_pixel_data, fits_path_data = fits_path_data, fits_path_bk = fits_path_bk, $
-  time_shift = time_shift, energy_shift = energy_shift, distance = distance, flare_location = flare_location, $
-  det_ind = det_ind, pix_ind = pix_ind, $
-  shift_duration = shift_duration, no_attenuation = no_attenuation, sys_uncert = sys_uncert, $
-  generate_fits = generate_fits, specfile = specfile, srmfile = srmfile, xspec = xspec,$
-  background_data = background_data, plot = plot, ospex_obj = ospex_obj
+  time_shift = time_shift, energy_shift = energy_shift, distance = distance, $
+  aux_fits_file = aux_fits_file, flare_location_hpc = flare_location_hpc, flare_location_stx = flare_location_stx, $
+  det_ind = det_ind, pix_ind = pix_ind, elut_correction = elut_correction, shift_duration = shift_duration, $
+  no_attenuation = no_attenuation, sys_uncert = sys_uncert, generate_fits = generate_fits, specfile = specfile, $
+  srmfile = srmfile, xspec = xspec, silent = silent, background_data = background_data, plot = plot, ospex_obj = ospex_obj
 
-
-  if n_elements(time_shift) eq 0 then begin
-    message, 'Time shift value not set using default value of 0 [s].', /info
-    print, 'File averaged values can be obtained from the FITS file header'
-    print, 'using stx_get_header_corrections.pro.'
-    time_shift = 0.
-  endif
-
-  default, flare_location, [0.,0.]
   default, shift_duration, 0
-  default, xspec, 0
   default, plot, 1
   default, det_ind, 'top24'
+  default, elut_correction, 1 
+  default, silent, 0
+  default, xspec, 0
+
+  if n_elements(time_shift) eq 0 then begin
+  if ~keyword_set(silent) then begin
+    message, 'Time shift value not set, using default value of 0 [s].', /info
+    print, 'File averaged values can be obtained from the FITS file header'
+    print, 'using stx_get_header_corrections.pro.'
+  endif
+    time_shift = 0.
+  endif
 
   if data_type(det_ind) eq 7 then det_ind = stx_label2det_ind(det_ind)
   if data_type(pix_ind) eq 7 then pix_ind = stx_label2pix_ind(pix_ind)
@@ -127,20 +137,25 @@ pro  stx_convert_pixel_data, fits_path_data = fits_path_data, fits_path_bk = fit
 
   stx_read_pixel_data_fits_file, fits_path_data, time_shift, primary_header = primary_header, data_str = data_str, data_header = data_header, control_str = control_str, $
     control_header= control_header, energy_str = energy_str, energy_header = energy_header, t_axis = t_axis, energy_shift = energy_shift,  e_axis = e_axis , use_discriminators = 0, $
-    shift_duration = shift_duration
+    shift_duration = shift_duration, silent=silent
 
   data_level = 1
 
   start_time = atime(stx_time2any((t_axis.time_start)[0]))
 
   elut_filename = stx_date2elut_file(start_time)
+ 
+  if ~keyword_set(silent) then begin
+        print, 'Using ELUT file ' + elut_filename
+  endif
+  
   uid = control_str.request_id
 
   if n_elements(distance) ne 0 then fits_distance = distance
 
   fits_info_params = stx_fits_info_params( fits_path_data = fits_path_data, data_level = data_level, $
     distance = fits_distance, time_shift = time_shift, fits_path_bk = fits_path_bk, uid = uid, $
-    generate_fits = generate_fits, specfile = specfile, srmfile = srmfile, elut_file = elut_filename)
+    generate_fits = generate_fits, specfile = specfile, srmfile = srmfile, elut_file = elut_filename, silent = silent)
 
   counts_in = data_str.counts
 
@@ -173,6 +188,7 @@ pro  stx_convert_pixel_data, fits_path_data = fits_path_data, fits_path_bk = fit
   detector_mask_used[detectors_used]  = 1
   n_detectors = total(detector_mask_used)
 
+  if ~keyword_set(silent) then begin
   if total(pixel_mask_used[0:3]) eq total(pixel_mask_used[4:7]) then begin
     count_ratio_threshold = 1.05
     counts_top = total(counts_in[1:25,0:3,detectors_used,*])
@@ -183,17 +199,7 @@ pro  stx_convert_pixel_data, fits_path_data = fits_path_data, fits_path_bk = fit
       else:
     endcase
   endif
-
-
-  stx_read_elut, ekev_actual = ekev_actual, elut_filename = elut_filename
-
-  ave_edge  = mean(reform(ekev_actual[energy_edges_used-1, pixels_used, detectors_used, 0 ],n_energy_edges, n_pixels, n_detectors), dim= 2)
-  ave_edge  = mean(reform(ave_edge,n_energy_edges, n_detectors), dim= 2)
-
-
-  edge_products, ave_edge, width = ewidth
-
-  eff_ewidth =  (e_axis.width)/ewidth
+  endif 
 
 
   counts_in = reform(counts_in,[dim_counts[0:2], n_times])
@@ -202,10 +208,9 @@ pro  stx_convert_pixel_data, fits_path_data = fits_path_data, fits_path_bk = fit
 
   spec_in = reform(spec_in,[dim_counts[0],n_detectors, n_times])
 
-  counts_spec =  spec_in[energy_bins,*, *]/ reform(reproduce(eff_ewidth, n_detectors*n_times),n_energies, n_detectors, n_times)
+  counts_spec =  spec_in[energy_bins,*, *]
 
   counts_spec =  reform(counts_spec,[n_energies, n_detectors, n_times])
-
 
   counts_err = reform(data_str.counts_err,[dim_counts[0:2], n_times])
 
@@ -213,16 +218,39 @@ pro  stx_convert_pixel_data, fits_path_data = fits_path_data, fits_path_bk = fit
 
   counts_err = reform(counts_err,[dim_counts[0],n_detectors, n_times])
 
-  counts_err =  counts_err[energy_bins,*, *]/ reform(reproduce(eff_ewidth, n_detectors*n_times),n_energies, n_detectors, n_times)
-
+  counts_err =  counts_err[energy_bins,*, *]
+  
   counts_err =  reform(counts_err,[n_energies, n_detectors, n_times])
 
   triggers =  transpose(reform(data_str.triggers,[16, n_times]))
 
   triggers_err =  transpose(reform(data_str.triggers_err,[16, n_times]))
 
-
   rcr = data_str.rcr
+  
+ if keyword_set(elut_correction) then begin
+
+
+  stx_read_elut, ekev_actual = ekev_actual, elut_filename = elut_filename
+
+  ave_edge  = mean(reform(ekev_actual[energy_edges_used-1, pixels_used, detectors_used, 0 ],n_energy_edges, n_pixels, n_detectors), dim= 2)
+  ave_edge  = mean(reform(ave_edge,n_energy_edges, n_detectors), dim= 2)
+
+  edge_products, ave_edge, width = ewidth
+
+  eff_ewidth =  (e_axis.width)/ewidth
+
+
+  counts_spec =  counts_spec * reform(reproduce(eff_ewidth, n_detectors*n_times),n_energies, n_detectors, n_times)
+
+  counts_spec =  reform(counts_spec,[n_energies, n_detectors, n_times])
+
+
+  counts_err =  counts_err * reform(reproduce(eff_ewidth, n_detectors*n_times),n_energies, n_detectors, n_times)
+
+  counts_err =  reform(counts_err,[n_energies, n_detectors, n_times])
+  
+  endif
 
   ;insert the information from the telemetry file into the expected stx_fsw_sd_spectrogram structure
   spectrogram = { $
@@ -288,12 +316,12 @@ pro  stx_convert_pixel_data, fits_path_data = fits_path_data, fits_path_bk = fit
 
   ;add the rcr information to a specpar structure so it can be included in the spectrum FITS file
   specpar = { sp_atten_state :  {time:ut_rcr[index], state:state}, flare_xyoffset : fltarr(2), use_flare_xyoffset:0 }
-  if n_elements(flare_location) ne 0 then specpar.flare_xyoffset = flare_location
 
   stx_convert_science_data2ospex, spectrogram = spectrogram, specpar=specpar, time_shift = time_shift, $
-    data_level = data_level, data_dims = data_dims, fits_path_bk = fits_path_bk, distance = distance, $
-    fits_path_data = fits_path_data, flare_location = flare_location, eff_ewidth = eff_ewidth, xspec = xspec, sys_uncert = sys_uncert, $
-    plot = plot, background_data = background_data, fits_info_params = fits_info_params, ospex_obj = ospex_obj
+    data_level = data_level, data_dims = data_dims, fits_path_bk = fits_path_bk, fits_path_data = fits_path_data,$
+    aux_fits_file = aux_fits_file, flare_location_hpc = flare_location_hpc, flare_location_stx = flare_location_stx, $
+    eff_ewidth = eff_ewidth, xspec = xspec, sys_uncert = sys_uncert, plot = plot, background_data = background_data, silent = silent, $
+    elut_correction = elut_correction, fits_info_params = fits_info_params, ospex_obj = ospex_obj
 
 end
 

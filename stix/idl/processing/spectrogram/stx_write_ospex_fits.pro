@@ -58,12 +58,12 @@ pro stx_write_ospex_fits, $
   xspec = xspec, $
   sys_err = sys_err, $
   fits_info_params = fits_info_params, $
+  silent = silent, $
   _extra = extra_keys
 
   default, any_specfile, 0
   default, xspec, 0
-
-  if ~keyword_set(any_specfile) then begin
+  if ~keyword_set(any_specfile) and ~keyword_set(silent) then begin
     print,  'To use SPEX_ANY_SPECFILE strategy '
     print,  'change self->setstrategy, '+string(39B)+'SPEX_HESSI_SPECFILE' +string(39B)+ ' to self->setstrategy, '+string(39B)+'SPEX_ANY_SPECFILE'+string(39B)
     print,  'in STIX rate block of spex_data__define.pro'
@@ -166,14 +166,14 @@ pro stx_write_ospex_fits, $
 
   fxaddpar, specheader, 'REQUEST_ID', fits_info_params.uid, "Unique Request ID for the Observation", before='AUTHOR'
   fxaddpar, specheader, 'SUN_DISTANCE', fits_info_params.distance, "Distance in AU to Sun", before='AUTHOR'
-  fxaddpar, specheader, 'GRID_FACTOR', (fits_info_params.grid_factor.toarray())[0], "Total Grid Transmission Factor", before='AUTHOR'
+  fxaddpar, specheader, 'GRID_FACTOR', ((fits_info_params.grid_factor.toarray())[0]), "Total Grid Transmission Factor", before='AUTHOR'
   fxaddpar, specheader, 'ELUT_FILENAME', fits_info_params.elut_file, "Filename of ELUT", before='AUTHOR'
   fxaddpar, specheader, 'DETUSED', fits_info_params.detused, "Label for detectors used", before='AUTHOR'
   fxaddpar, specheader, 'DETNAM', fits_info_params.detused, "Label for detectors used", before='AUTHOR'
   fxaddpar, specheader, 'SUMFLAG', 1, "Detectors are summed", before='AUTHOR'
 
   fxaddpar, srmheader, 'SUN_DISTANCE', fits_info_params.distance, "Distance in AU to Sun", before='AUTHOR'
-  fxaddpar, srmheader, 'GRID_FACTOR', (fits_info_params.grid_factor.toarray())[0], "Total Grid Transmission Factor used", before='AUTHOR'
+  fxaddpar, srmheader, 'GRID_FACTOR', ((fits_info_params.grid_factor.toarray())[0]), "Total Grid Transmission Factor used", before='AUTHOR'
   fxaddpar, srmheader, 'DETUSED', fits_info_params.detused, "Label for detectors used", before='AUTHOR'
   fxaddpar, srmheader, 'DETNAM', fits_info_params.detused, "Label for detectors used", before='AUTHOR'
   fxaddpar, srmheader, 'SUMFLAG', 1, "Detectors are summed", before='AUTHOR'

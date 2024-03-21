@@ -21,7 +21,10 @@
 ;
 ;    plotman_obj  : out, if set to a named variable this will pass out the plotman object created when the
 ;                 spectrogram is plotted
-;
+;                 
+;    flare_location_stx: in, type="2 element float array"
+;                  the flare location (X,Y) in the STIX coordinate frame [arcsec]
+;    
 ;  :returns:
 ;    ospex object with spectrogram data
 ;
@@ -42,11 +45,13 @@
 ;                               pass through structure of info parameters to write in FITS file
 ;    03-Oct-2022 - ECMD (Graz), replaced stix_gtrans32_test with stx_subc_transmission for calculating the grid transmission 
 ;                               and made the routine the default option rather than the tabulated on-axis values
+;    16-Jun-2023 - ECMD (Graz), for a source location dependent response estimate, the location in the STIX coordinate frame must be provided.
+;    
 ;
 ;-
 function stx_fsw_sd_spectrogram2ospex, spectrogram, specpar = specpar, time_shift = time_shift, ph_energy_edges = ph_edges, generate_fits = generate_fits, plotman_obj = pobj, $
-  specfilename = specfilename, srmfilename = srmfilename, flare_location = flare_location, gtrans32 = gtrans32, livetime_fraction = livetime_fraction, sys_uncert = sys_uncert, $
-  fits_info_params = fits_info_params, xspec = xspec, background_data = background_data, _extra = _extra
+  specfilename = specfilename, srmfilename = srmfilename, flare_location_stx = flare_location_stx, gtrans32 = gtrans32, livetime_fraction = livetime_fraction, sys_uncert = sys_uncert, $
+  fits_info_params = fits_info_params, xspec = xspec, background_data = background_data, silent = silent, _extra = _extra
 
   default, sys_uncert, 0.05
   default, gtrans32, 1
@@ -67,23 +72,22 @@ function stx_fsw_sd_spectrogram2ospex, spectrogram, specpar = specpar, time_shif
   pixels_used = [where(spectrogram.pixel_mask eq 1 , /null)]
 
   grid_transmission_file =  concat_dir(getenv('STX_GRID'), 'nom_grid_transmission.txt')
-  readcol, grid_transmission_file, grid_factors_file, format = 'f', skip = 2
+  readcol, grid_transmission_file, grid_factors_file, format = 'f', skip = 2, silent = silent
   
-  
-  if (keyword_set(gtrans32) and n_elements(flare_location) ne 0) then begin
-    grid_factors_proc = stx_subc_transmission(flare_location)
-    ;grid_factors_proc = stx_subc_transmission_ed(flare_location,ph_in, full =full)
+    if (keyword_set(gtrans32) and n_elements(flare_location_stx) ne 0) then begin
+    grid_factors_proc = stx_subc_transmission(flare_location_stx, ph_in, /flux, silent = silent)
+
+    nph = n_elements(ph_in)
+    ngrids = n_elements(grids_used)
+    
 
     ;05-Oct-2022 - ECMD until fine grid tranmission is ready replace the 
     ;grids not in TOP24 with the on-axis tabulated values
     idx_nontop24 = stx_label2det_ind('bkg+cfl+fine')
-    grid_factors_proc[idx_nontop24] = grid_factors_file[idx_nontop24]
-    grid_factor  = average(grid_factors_proc[grids_used])
-   
-   grid_factors_proc = stx_tungsten_transmission(flare_location, ph_in)
-   grid_factors_proc[*,idx_nontop24] = transpose(rebin(grid_factors_file[idx_nontop24],n_elements(idx_nontop24),n_elements(ph_in)))
-   grid_factors  = average(grid_factors_proc[*,grids_used],2)
-   grid_factor = grid_factors
+  
+    grid_factors_proc[*,idx_nontop24] = transpose(rebin(grid_factors_file[idx_nontop24],n_elements(idx_nontop24),nph))
+    grid_factor = average(reform(rebin(grid_factors_proc[*,grids_used], nph, ngrids), nph, ngrids),2)
+        
   endif else begin
     print, 'Using nominal (on axis) grid transmission'
     grid_factor = average(grid_factors_file[grids_used])
@@ -94,7 +98,8 @@ function stx_fsw_sd_spectrogram2ospex, spectrogram, specpar = specpar, time_shif
     if n_elements(grids_used) eq 1 then if grids_used eq 9 then begin
       print, 'Using nominal (on axis) grid transmission for background detector'
       grid_transmission_file =  concat_dir(getenv('STX_GRID'), 'nom_bkg_grid_transmission.txt')
-      readcol, grid_transmission_file, bk_grid_factors, format = 'f', skip = 2
+      readcol, grid_transmission_file, bk_grid_factors, format = 'f', skip = 2, silent = silent
+      
       grid_factor = average(bk_grid_factors[pixels_used])
 
     endif else begin
@@ -166,7 +171,7 @@ function stx_fsw_sd_spectrogram2ospex, spectrogram, specpar = specpar, time_shif
 
     stx_write_ospex_fits, spectrum = spectrum_in, srmdata = srm, specpar = specpar, time_shift = time_shift, $
       srm_atten = srm_atten, specfilename = specfilename, srmfilename = srmfilename, ph_edges = ph_edges, $
-      fits_info_params = fits_info_params, xspec = xspec
+      fits_info_params = fits_info_params, xspec = xspec, silent = silent
 
     ospex_obj->set, spex_file_reader = 'stx_read_sp'
     ospex_obj->set, spex_specfile = specfilename   ; name of your spectrum file
