@@ -34,9 +34,11 @@
 ;-
 function stx_check_fine_thermal_bins, start_time,  sum_fine_bins = sum_fine_bins
 
-  ; Determin if time range of observation is during autumn 2023 fine energy bin campaign 
+  ; Determine if time range of observation is during autumn 2023 fine energy bin campaign
   fine_bin_campaign_2023 = (anytim(start_time) gt anytim('2023-07-31T00:05:58') $
     and anytim(start_time) lt anytim('2023-11-05T00:01:00'))
+
+  default, sum_fine_bins, fine_bin_campaign_2023
 
   if ~fine_bin_campaign_2023 and sum_fine_bins then begin
     print, '***********************************************************************'
@@ -46,11 +48,10 @@ function stx_check_fine_thermal_bins, start_time,  sum_fine_bins = sum_fine_bins
     sum_fine_bins = 0
   endif
 
-  default, sum_fine_bins, fine_bin_campaign_2023
 
   if sum_fine_bins ne 0 then begin
     print, '***********************************************************************'
-    print, 'Warning: Due to the energy binning in the selected observation time'
+    print, 'Information: Due to the energy binning in the selected observation time'
     print, 'the bins between 6.3 and 7.3 have been summed.'
     print, '************************************************************************'
   endif

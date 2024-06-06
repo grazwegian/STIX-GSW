@@ -23,14 +23,14 @@
 ;    19-Mar-2024 - ECMD (Graz), initial version based on stx_cfl_read_mask 
 ;
 ;-
-function stx_read_summed_bins, fpath
+function stx_read_summed_bins, bin_file
   
   ;  Set default file path location
-  fpath = exist( fpath ) ? fpath : loc_file( 'summed_bins_19032024.txt', path = getenv('STX_DET') )
+  bin_file = exist( bin_file ) ? bin_file : loc_file( 'summed_bins_19032024.txt', path = getenv('STX_DET') )
   ;  Return error if look-up file does not exist
-  if ~file_exist( fpath ) then return, -11 
+  if ~file_exist( bin_file ) then return, -11 
   
-  ind = stx_read_mask(fpath)
+  ind = stx_read_mask(bin_file)
    
    ;  Return error if look-up file contains > 32 entries
    if ( n_elements( ind ) gt 32 ) then return, -31

@@ -82,7 +82,7 @@
 ;    16-Aug-2022 - ECMD (Graz), pass out background data structure for plotting
 ;    16-Jun-2023 - ECMD (Graz), for a source location dependent response estimate, the location in HPC and the auxiliary ephemeris file must be provided.
 ;    20-Mar-2024 - ECMD (Graz), added sum_fine_bins keyword
-;    
+;
 ;-
 pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar, time_shift = time_shift, data_level = data_level, $
   data_dims = data_dims, fits_path_bk = fits_path_bk, fits_path_data = fits_path_data, fits_info_params = fits_info_params, $
@@ -92,14 +92,15 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
 
 
   default, plot, 0
-
+  
   time_range = atime(stx_time2any([spectrogram.time_axis.time_start[0], spectrogram.time_axis.time_end[-1]]))
+  start_time = time_range[0]
 
   if n_elements(flare_location_hpc) eq 2 and n_elements(aux_fits_file) eq 0 then aux_fits_file =  stx_get_ephemeris_file( time_range[0], time_range[1])
 
   if n_elements(flare_location_stx) eq 0 then flare_location_stx = stx_location4spectroscopy( flare_location_hpc = flare_location_hpc, aux_fits_file = aux_fits_file, $
     time_range = time_range, silent = silent)
-    
+
   specpar.flare_xyoffset = flare_location_stx
 
   distance = fits_info_params.distance
@@ -260,13 +261,14 @@ pro stx_convert_science_data2ospex, spectrogram = spectrogram, specpar = specpar
     rcr           : spectrogram.rcr,$
     error         : total_error}
 
-sum_fine_bins = stx_check_fine_thermal_bins(start_time,  sum_fine_bins = sum_fine_bins)
 
-if sum_fine_bins then begin 
- 
- spectrogram =  stx_sum_fine_bins(spectrogram, eff_livetime_fraction_expanded)
-  
-endif
+  sum_fine_bins = stx_check_fine_thermal_bins(start_time,  sum_fine_bins = sum_fine_bins)
+
+  if sum_fine_bins then begin
+
+    spectrogram =  stx_sum_fine_bins(spectrogram, eff_livetime_fraction_expanded)
+
+  endif
 
   uid = fits_info_params.uid
 
